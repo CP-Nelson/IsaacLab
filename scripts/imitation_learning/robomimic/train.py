@@ -27,7 +27,7 @@
 
 """
 The main entry point for training policies from pre-collected data.
-
+// 传入参数
 Args:
     algo: name of the algorithm to run.
     task: name of the environment.
@@ -39,7 +39,7 @@ This file has been modified from the original version in the following ways:
 """
 
 """Launch Isaac Sim Simulator first."""
-
+################### 启动 ###################
 from isaaclab.app import AppLauncher
 
 # launch omniverse app
@@ -48,33 +48,34 @@ simulation_app = app_launcher.app
 
 """Rest everything follows."""
 
-import argparse
-import gymnasium as gym
-import json
-import numpy as np
-import os
-import sys
-import time
-import torch
-import traceback
-from collections import OrderedDict
-from torch.utils.data import DataLoader
+import argparse # 命令行传参解算
+import gymnasium as gym # 建立基础robomimic训练环境，可能是isaac_gym期用于构建的基础框架
+import json # 传入传出config文件，输出train和validation文件记录
+import numpy as np # 引入固定随机数种，确保结果可复现
+import os # 文件操作
+import sys # 命令行显示输出
+import time # 测量时间
+import torch # robomimic神经网络框架
+import traceback # 错误反馈
+from collections import OrderedDict # 用于构建有序字典，便于查看和存储显示
+from torch.utils.data import DataLoader # pytorch数据处理
 
-import psutil
-import robomimic.utils.env_utils as EnvUtils
-import robomimic.utils.file_utils as FileUtils
-import robomimic.utils.obs_utils as ObsUtils
-import robomimic.utils.torch_utils as TorchUtils
-import robomimic.utils.train_utils as TrainUtils
-from robomimic.algo import algo_factory
-from robomimic.config import config_factory
-from robomimic.utils.log_utils import DataLogger, PrintLogger
+import psutil #调用显示系统当前ram资源
+import robomimic.utils.env_utils as EnvUtils # robomimic环境构建，类似dataloader
+import robomimic.utils.file_utils as FileUtils # robomimic加载数据集环境参数及形状参数
+import robomimic.utils.obs_utils as ObsUtils # robomimic初始化加载环境变量
+import robomimic.utils.torch_utils as TorchUtils # robomimic根据config内容，设定torch设备
+import robomimic.utils.train_utils as TrainUtils # robomimic训练过程主交互|重要|################
+from robomimic.algo import algo_factory # robomimic算法配置，指定不同类型算法
+from robomimic.config import config_factory # robomimic配置区
+from robomimic.utils.log_utils import DataLogger, PrintLogger # robomimic数据记录，控制台输出
 
 # Needed so that environment is registered
 import isaaclab_tasks  # noqa: F401
 
-
+############### 训练开始 ###############
 def train(config, device):
+############## 初始化-文件记录 ##################
     """Train a model using the algorithm."""
     # first set seeds
     np.random.seed(config.train.seed)
@@ -94,36 +95,47 @@ def train(config, device):
         logger = PrintLogger(os.path.join(log_dir, "log.txt"))
         sys.stdout = logger
         sys.stderr = logger
+###############################################
 
+
+###############################################
+########        初始化环境数据参数       #######
     # read config to set up metadata for observation modalities (e.g. detecting rgb observations)
     ObsUtils.initialize_obs_utils_with_config(config)
 
-    # make sure the dataset exists
+    # make sure the dataset exists  读取训练数据路径
     dataset_path = os.path.expanduser(config.train.data)
     if not os.path.exists(dataset_path):
         raise FileNotFoundError(f"Dataset at provided path {dataset_path} not found!")
 
-    # load basic metadata from training file
+    # load basic metadata from training file  config训练数据的meta数据，导出其中的env和shape
     print("\n============= Loaded Environment Metadata =============")
     env_meta = FileUtils.get_env_metadata_from_dataset(dataset_path=config.train.data)
     shape_meta = FileUtils.get_shape_metadata_from_dataset(
         dataset_path=config.train.data, all_obs_keys=config.all_obs_keys, verbose=True
     )
 
+    # 给定env名称
     if config.experiment.env is not None:
         env_meta["env_name"] = config.experiment.env
         print("=" * 30 + "\n" + "Replacing Env to {}\n".format(env_meta["env_name"]) + "=" * 30)
+###############################################
 
-    # create environment
+
+###############################################
+########        创建环境       #######
+    # create environment  初始化有序环境字典envs
     envs = OrderedDict()
     if config.experiment.rollout.enabled:
         # create environments for validation runs
+        # 环境创建启动，根据config的.experiment.env和.experiment.additional_envs创建环境
         env_names = [env_meta["env_name"]]
 
         if config.experiment.additional_envs is not None:
             for name in config.experiment.additional_envs:
                 env_names.append(name)
 
+        # 遍历所有环境，初始化一遍各环境存入envs字典中
         for env_name in env_names:
             env = EnvUtils.create_env_from_metadata(
                 env_meta=env_meta,
@@ -137,7 +149,7 @@ def train(config, device):
 
     print("")
 
-    # setup for a new training run
+    # setup for a new training run  初始化数据记录；依据config建立训练模型，依据shape_meta确立传入和传出动作空间的维度
     data_logger = DataLogger(log_dir, config=config, log_tb=config.experiment.logging.log_tb)
     model = algo_factory(
         algo_name=config.algo_name,
@@ -147,7 +159,7 @@ def train(config, device):
         device=device,
     )
 
-    # save the config as a json file
+    # save the config as a json file  记录config为json文件
     with open(os.path.join(log_dir, "..", "config.json"), "w") as outfile:
         json.dump(config, outfile, indent=4)
 
@@ -155,19 +167,19 @@ def train(config, device):
     print(model)  # print model summary
     print("")
 
-    # load training data
+    # load training data 借助TrainUtils模块，初始化训练集trainset和验证集validset
     trainset, validset = TrainUtils.load_data_for_training(config, obs_keys=shape_meta["all_obs_keys"])
-    train_sampler = trainset.get_dataset_sampler()
+    train_sampler = trainset.get_dataset_sampler() # 训练数据采样器
     print("\n============= Training Dataset =============")
     print(trainset)
     print("")
 
-    # maybe retrieve statistics for normalizing observations
+    # maybe retrieve statistics for normalizing observations  归一化统计训练数据，用于保存后查看
     obs_normalization_stats = None
     if config.train.hdf5_normalize_obs:
         obs_normalization_stats = trainset.get_obs_normalization_stats()
 
-    # initialize data loaders
+    # initialize data loaders  初始化训练集的DataLoader
     train_loader = DataLoader(
         dataset=trainset,
         sampler=train_sampler,
@@ -177,8 +189,9 @@ def train(config, device):
         drop_last=True,
     )
 
+    # 判断并进行验证集初始化流程
     if config.experiment.validate:
-        # cap num workers for validation dataset at 1
+        # cap num workers for validation dataset at 1 缩小工作线程至1
         num_workers = min(config.train.num_data_workers, 1)
         valid_sampler = validset.get_dataset_sampler()
         valid_loader = DataLoader(
@@ -193,16 +206,18 @@ def train(config, device):
         valid_loader = None
 
     # main training loop
-    best_valid_loss = None
-    last_ckpt_time = time.time()
+    best_valid_loss = None # 不记录最佳损失值
+    last_ckpt_time = time.time() # 记录训练开始时间
 
-    # number of learning steps per epoch (defaults to a full dataset pass)
+    # number of learning steps per epoch (defaults to a full dataset pass) 训练及验证步数
     train_num_steps = config.experiment.epoch_every_n_steps
     valid_num_steps = config.experiment.validation_epoch_every_n_steps
 
+    # 开始训练
     for epoch in range(1, config.train.num_epochs + 1):  # epoch numbers start at 1
+        # 执行一次训练并返回日志
         step_log = TrainUtils.run_epoch(model=model, data_loader=train_loader, epoch=epoch, num_steps=train_num_steps)
-        model.on_epoch_end(epoch)
+        model.on_epoch_end(epoch) # epoch结束时固定更新
 
         # setup checkpoint path
         epoch_ckpt_name = f"model_epoch_{epoch}"

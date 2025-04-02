@@ -43,7 +43,7 @@ from isaaclab.sim import SimulationContext
 ##
 # Pre-defined configs
 ##
-from isaaclab_assets import CARTPOLE_CFG  # isort:skip
+from isaaclab_assets import GRMINI_CFG  # isort:skip
 
 
 def design_scene() -> tuple[dict, list[list[float]]]:
@@ -64,12 +64,12 @@ def design_scene() -> tuple[dict, list[list[float]]]:
     prim_utils.create_prim("/World/Origin2", "Xform", translation=origins[1])
 
     # Articulation
-    cartpole_cfg = GRMINI_CFG.copy()
-    cartpole_cfg.prim_path = "/World/Origin.*/Robot"
-    cartpole = Articulation(cfg=GRMINI_CFG)
+    grmini_cfg = GRMINI_CFG.copy()
+    grmini_cfg.prim_path = "/World/Origin.*/Robot"
+    grmini = Articulation(cfg=grmini_cfg)
 
     # return the scene information
-    scene_entities = {"GRMINI": cartpole}
+    scene_entities = {"grmini": grmini}
     return scene_entities, origins
 
 
@@ -78,7 +78,7 @@ def run_simulator(sim: sim_utils.SimulationContext, entities: dict[str, Articula
     # Extract scene entities
     # note: we only do this here for readability. In general, it is better to access the entities directly from
     #   the dictionary. This dictionary is replaced by the InteractiveScene class in the next tutorial.
-    robot = entities["GRMINI"]
+    robot = entities["grmini"]
     # Define simulation stepping
     sim_dt = sim.get_physics_dt()
     count = 0
@@ -92,20 +92,13 @@ def run_simulator(sim: sim_utils.SimulationContext, entities: dict[str, Articula
             # root state
             # we offset the root state by the origin since the states are written in simulation world frame
             # if this is not done, then the robots will be spawned at the (0, 0, 0) of the simulation world
-            root_state = robot.data.default_root_state.clone()
-            root_state[:, :3] += origins
-            robot.write_root_pose_to_sim(root_state[:, :7])
-            robot.write_root_velocity_to_sim(root_state[:, 7:])
-            # set joint positions with some noise
-            joint_pos, joint_vel = robot.data.default_joint_pos.clone(), robot.data.default_joint_vel.clone()
-            joint_pos += torch.rand_like(joint_pos) * 0.1
-            robot.write_joint_state_to_sim(joint_pos, joint_vel)
+
             # clear internal buffers
             robot.reset()
             print("[INFO]: Resetting robot state...")
         # Apply random action
         # -- generate random joint efforts
-        efforts = torch.randn_like(robot.data.joint_pos) * 10.0
+        efforts = torch.randn_like(robot.data.joint_pos) * 5.0
         # -- apply action to the robot
         robot.set_joint_effort_target(efforts)
         # -- write data to sim

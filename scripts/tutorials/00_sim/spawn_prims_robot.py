@@ -35,8 +35,6 @@ import isaacsim.core.utils.prims as prim_utils
 
 import isaaclab.sim as sim_utils
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
-import isaacsim.core.utils.stage as stage_utils
-from isaaclab.assets import Articulation
 
 
 def design_scene():
@@ -62,6 +60,7 @@ def design_scene():
     )
     cfg_cone.func("/World/Objects/Cone1", cfg_cone, translation=(-1.0, 1.0, 1.0))
     cfg_cone.func("/World/Objects/Cone2", cfg_cone, translation=(-1.0, -1.0, 1.0))
+
     # spawn a green cone with colliders and rigid body
     cfg_cone_rigid = sim_utils.ConeCfg(
         radius=0.15,
@@ -76,22 +75,17 @@ def design_scene():
     )
 
     # spawn a blue cuboid with deformable body
-    cfg_cuboid_position = sim_utils.MeshSphereCfg(
-        radius=0.01,
-        visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 1.0)),
+    cfg_cuboid_deformable = sim_utils.MeshCuboidCfg(
+        size=(0.2, 0.5, 0.2),
+        deformable_props=sim_utils.DeformableBodyPropertiesCfg(),
+        visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0)),
+        physics_material=sim_utils.DeformableBodyMaterialCfg(),
     )
-    ball_prim_path = "/World/Objects/cfg_cuboid_position1"
-    cfg_cuboid_position.func(ball_prim_path, cfg_cuboid_position, translation=(0.15, 0.0, 2.0))
-    cfg_cuboid_position.func("/World/Objects/cfg_cuboid_position2", cfg_cuboid_position, translation=(0.15, 0.0, 1.0))
+    cfg_cuboid_deformable.func("/World/Objects/CuboidDeformable", cfg_cuboid_deformable, translation=(0.15, 0.0, 2.0))
 
-def move(index):
-    trajectory = [
-        (0.15, 0.0, 1.1),
-        (0.2, 0.1, 1.9),
-        (0.25, 0.2, 1.8),
-        (0.3, 0.3, 1.7)
-    ]
-    prim_utils.set_prim_attribute_value("/World/Objects/cfg_cuboid_position1", attribute_name="xformOp:translate", value=trajectory[index])
+    # spawn a usd file of a table into the scene
+    cfg = sim_utils.UsdFileCfg(usd_path=f"C:/Users/FFTAI/Desktop/bvh_fftai/a.usd")
+    cfg.func("/World/Objects/Table", cfg, translation=(0.0, 0.0, 1.05))
 
 
 def main():
@@ -110,14 +104,9 @@ def main():
     sim.reset()
     # Now we are ready!
     print("[INFO]: Setup complete...")
-    count = 0
 
     # Simulate physics
     while simulation_app.is_running():
-        a = [0.15, 0.0, 1.1]
-        a[0]+=0.1
-        prim_utils.set_prim_attribute_value("/World/Objects/cfg_cuboid_position1", attribute_name="xformOp:translate", value=a)
-        prim_utils.set_prim_attribute_value("/World/Objects/cfg_cuboid_position1", attribute_name="xformOp:translate", value=a)
         # perform step
         sim.step()
 

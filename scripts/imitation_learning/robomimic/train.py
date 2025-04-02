@@ -174,7 +174,7 @@ def train(config, device):
     print(trainset)
     print("")
 
-    # maybe retrieve statistics for normalizing observations  归一化统计训练数据，用于保存后查看
+    # maybe retrieve statistics for normalizing observations 归一化统计训练数据，用于保存后查看
     obs_normalization_stats = None
     if config.train.hdf5_normalize_obs:
         obs_normalization_stats = trainset.get_obs_normalization_stats()

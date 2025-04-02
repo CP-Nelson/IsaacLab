@@ -1,7 +1,7 @@
 import h5py
 
 # 读取 HDF5 文件
-file_path = "grmini_data.hdf5"  # 替换为实际文件路径
+file_path = "./datasets/dataset.hdf5"  # 替换为实际文件路径
 def explore_hdf5(obj, indent=0):
     """ 递归遍历 HDF5 文件结构 """
     for key in obj:

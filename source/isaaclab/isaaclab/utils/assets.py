@@ -17,7 +17,6 @@ import io
 import os
 import tempfile
 from typing import Literal
-
 import carb
 import omni.client
 

@@ -1,10 +1,9 @@
 import json
+from isaacsim import SimulationApp
 import time
 import numpy as np
 import bvhsdk
 import os
-from isaacsim import SimulationApp
-from isaaclab.envs.mdp.recorders.recorders_cfg import ActionStateRecorderManagerCfg
 
 # os.environ["OMNI_KIT_ACCEPT_EULA"] = "YES"
 simulation_app = SimulationApp({"renderer": "RaytracedLighting", "headless": False})
@@ -141,12 +140,6 @@ distantLight.CreateIntensityAttr(500)
 urdf_joint_names = articulation.dof_names  # 关节名称列表
 
 
-env_cfg.recorders: ActionStateRecorderManagerCfg = ActionStateRecorderManagerCfg()
-env_cfg.recorders.dataset_export_dir_path = output_dir
-env_cfg.recorders.dataset_filename = output_file_name
-
-output_dir = os.path.dirname("dataset")
-output_file_name = 'file.udf5'
 # Start simulation
 # omni.timeline.get_timeline_interface().play()
 

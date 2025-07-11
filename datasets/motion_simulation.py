@@ -70,8 +70,8 @@ robot = world.scene.get_object('/GRMiniT1')
 # 让 Isaac Sim 识别机器人关节
 articulation = Articulation(prim_path)
 articulation.initialize()
-damping_value = 5  # 适当调整阻尼
-stiffness_value = 500.0  # 适当调整刚度
+# damping_value = 5  # 适当调整阻尼
+# stiffness_value = 500.0  # 适当调整刚度
 
 # for dof in articulation.dof_names:
 #     joint_prim_path = f"{prim_path}/{dof}"  # 获取关节的 USD 路径
@@ -86,7 +86,7 @@ stiffness_value = 500.0  # 适当调整刚度
 #     drive.CreateDampingAttr().Set(damping_value)
 #     drive.CreateStiffnessAttr().Set(stiffness_value)
 
-print("Damping and stiffness values have been updated.")
+# print("Damping and stiffness values have been updated.")
 import omni.usd
 from pxr import UsdPhysics, UsdShade, Sdf
 # 创建物理材质

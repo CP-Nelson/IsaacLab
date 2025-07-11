@@ -55,6 +55,15 @@ gym.register(
 )
 
 gym.register(
+    id="Isaac-Lift-Cube-GR1T1-IK-Abs-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.ik_abs_env_cfg:FrankaCubeLiftEnvCfg",
+    },
+    disable_env_checker=True,
+)
+
+gym.register(
     id="Isaac-Lift-Teddy-Bear-Franka-IK-Abs-v0",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={

@@ -20,6 +20,7 @@ from . import joint_pos_env_cfg
 # Pre-defined configs
 ##
 from isaaclab_assets.robots.franka import FRANKA_PANDA_HIGH_PD_CFG  # isort: skip
+from isaaclab_assets.robots.gr1t1 import Gr1t1_LeftArm_CFG  # isort: skip
 
 
 ##
@@ -44,6 +45,29 @@ class FrankaCubeLiftEnvCfg(joint_pos_env_cfg.FrankaCubeLiftEnvCfg):
             body_name="panda_hand",
             controller=DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
             body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.107]),
+        )
+
+@configclass
+class Gr1t1CubeLiftEnvCfg(joint_pos_env_cfg.Gr1t1CubeLiftEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        # Set Franka as robot
+        # We switch here to a stiffer PD controller for IK tracking to be better.
+        self.scene.robot = Gr1t1_LeftArm_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+
+        # Set actions for the specific robot type (franka)
+        self.actions.arm_action = DifferentialInverseKinematicsActionCfg(
+            asset_name="robot",
+            joint_names=["l_shoulder_.*","l_elbow_.*","l_wrist_.*"],  # 🚨需替换为G1左臂的实际关节名
+            body_name="l_hand_roll",         # 🚨替换为G1左臂末端link的名字
+            controller=DifferentialIKControllerCfg(
+                command_type="pose", use_relative_mode=False, ik_method="dls"
+            ),
+            body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(
+                pos=[0.0, 0.0, 0.107]  # 🚨根据G1左手末端到抓取中心的偏移设置
+            ),
         )
 
 
